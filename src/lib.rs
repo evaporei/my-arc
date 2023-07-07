@@ -11,3 +11,19 @@ struct ArcInner<T> {
     rc: AtomicUsize,
     data: T,
 }
+
+impl<T> MyArc<T> {
+    pub fn new(data: T) -> Self {
+        let boxed_inner = Box::new(ArcInner {
+            rc: AtomicUsize::new(1),
+            data,
+        });
+
+        let heap_ptr = Box::into_raw(boxed_inner);
+
+        Self {
+            ptr: NonNull::new(heap_ptr).unwrap(),
+            phantom: PhantomData,
+        }
+    }
+}
