@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ptr::NonNull;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{self, AtomicUsize, Ordering};
 
 pub struct MyArc<T> {
     ptr: NonNull<ArcInner<T>>,
@@ -51,6 +51,19 @@ impl<T> Clone for MyArc<T> {
             ptr: self.ptr,
             phantom: PhantomData,
         }
+    }
+}
+
+impl<T> Drop for MyArc<T> {
+    fn drop(&mut self) {
+        let inner = unsafe { self.ptr.as_ref() };
+        if inner.rc.fetch_sub(1, Ordering::Release) != 1 {
+            return;
+        }
+
+        atomic::fence(Ordering::Acquire);
+
+        unsafe { Box::from_raw(self.ptr.as_ptr()) };
     }
 }
 
