@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::ptr::NonNull;
 use std::sync::atomic::AtomicUsize;
 
@@ -25,6 +26,15 @@ impl<T> MyArc<T> {
             ptr: NonNull::new(heap_ptr).unwrap(),
             phantom: PhantomData,
         }
+    }
+}
+
+impl<T> Deref for MyArc<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        let inner = unsafe { self.ptr.as_ref() };
+        &inner.data
     }
 }
 
