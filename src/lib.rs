@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ptr::NonNull;
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct MyArc<T> {
     ptr: NonNull<ArcInner<T>>,
@@ -35,6 +35,22 @@ impl<T> Deref for MyArc<T> {
     fn deref(&self) -> &T {
         let inner = unsafe { self.ptr.as_ref() };
         &inner.data
+    }
+}
+
+impl<T> Clone for MyArc<T> {
+    fn clone(&self) -> Self {
+        let inner = unsafe { self.ptr.as_ref() };
+        let old_rc = inner.rc.fetch_add(1, Ordering::Relaxed);
+
+        if old_rc >= isize::MAX as usize {
+            std::process::abort();
+        }
+
+        Self {
+            ptr: self.ptr,
+            phantom: PhantomData,
+        }
     }
 }
 
