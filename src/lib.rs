@@ -69,3 +69,29 @@ impl<T> Drop for MyArc<T> {
 
 unsafe impl<T: Sync + Send> Send for MyArc<T> {}
 unsafe impl<T: Sync + Send> Sync for MyArc<T> {}
+
+#[test]
+fn test_clone() {
+    let foo = MyArc::new(vec![1.0, 2.0, 3.0]);
+
+    let a = foo.clone();
+    let b = MyArc::clone(&foo);
+
+    assert_eq!(*foo, *a);
+    assert_eq!(*a, *b);
+}
+
+#[test]
+fn test_threads() {
+    use std::thread;
+
+    let five = MyArc::new(5);
+
+    for _ in 0..10 {
+        let five = MyArc::clone(&five);
+
+        thread::spawn(move || {
+            println!("{:?}", *five);
+        });
+    }
+}
