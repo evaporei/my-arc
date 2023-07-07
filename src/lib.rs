@@ -27,3 +27,6 @@ impl<T> MyArc<T> {
         }
     }
 }
+
+unsafe impl<T: Sync + Send> Send for MyArc<T> {}
+unsafe impl<T: Sync + Send> Sync for MyArc<T> {}
